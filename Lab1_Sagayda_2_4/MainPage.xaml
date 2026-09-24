@@ -4,6 +4,7 @@
     x:Class="Lab1_Sagayda_2_4.MainPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:models="clr-namespace:Lab1_Sagayda_2_4.Models"
     xmlns:viewModels="clr-namespace:Lab1_Sagayda_2_4.ViewModels"
     x:DataType="viewModels:StudentViewModel"
     Title="Особистий кабінет студента">
@@ -46,6 +47,60 @@
             <Button
                 Command="{Binding AddStudentCommand}"
                 Text="Додати студента" />
+
+            <Label
+                FontAttributes="Bold"
+                FontSize="22"
+                Text="Список студентів" />
+
+            <CollectionView
+                HeightRequest="300"
+                ItemsSource="{Binding Students, Mode=OneWay}">
+
+                <CollectionView.EmptyView>
+                    <Label
+                        HorizontalOptions="Center"
+                        Text="Список студентів поки порожній"
+                        TextColor="Gray" />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Student">
+
+                        <Border
+                Margin="0,5"
+                Padding="12"
+                Stroke="Gray"
+                StrokeShape="RoundRectangle 8">
+
+                            <Grid
+                    ColumnDefinitions="2*,*,Auto"
+                    ColumnSpacing="10">
+
+                                <Label
+                        Grid.Column="0"
+                        FontAttributes="Bold"
+                        Text="{Binding FullName}" />
+
+                                <Label
+                        Grid.Column="1"
+                        Text="{Binding Group,
+                                       StringFormat='Група: {0}'}" />
+
+                                <Label
+                        Grid.Column="2"
+                        Text="{Binding AverageScore,
+                                       StringFormat='Бал: {0:F2}'}" />
+
+                            </Grid>
+                        </Border>
+
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+
+
 
             <Border
                 Padding="15"

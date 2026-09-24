@@ -43,6 +43,9 @@
                 Text="{Binding AverageScore,
                                Mode=OneWay,
                                StringFormat='Середній бал: {0:F2}'}" />
+            <Button
+                Command="{Binding AddStudentCommand}"
+                Text="Додати студента" />
 
             <Border
                 Padding="15"

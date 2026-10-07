@@ -27,6 +27,10 @@
             <Label Text="Середній бал" />
             <Label Text="{Binding AverageScore, StringFormat='{0:F2}'}" />
 
+            <Button
+                Command="{Binding GoBackCommand}"
+                Text="Назад" />
+
         </VerticalStackLayout>
     </ScrollView>
 

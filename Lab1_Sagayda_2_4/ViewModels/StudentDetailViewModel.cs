@@ -1,10 +1,19 @@
 using System.ComponentModel;
+using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
 public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 {
+    public ICommand GoBackCommand { get; }
+
+    public StudentDetailViewModel()
+    {
+        GoBackCommand = new Command(async () =>
+            await Shell.Current.GoToAsync(".."));
+    }
+
     public string FullName { get; private set; } = string.Empty;
 
     public string Group { get; private set; } = string.Empty;

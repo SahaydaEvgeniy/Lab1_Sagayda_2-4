@@ -1,11 +1,11 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
-public class StudentViewModel : INotifyPropertyChanged
+public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 {
     private readonly Student _student = new();
 
@@ -13,9 +13,16 @@ public class StudentViewModel : INotifyPropertyChanged
 
     public ICommand AddStudentCommand { get; }
 
+    public ICommand OpenDetailsCommand { get; }
+
+    public ICommand DeleteStudentCommand { get; }
+
     public StudentViewModel()
     {
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
+        DeleteStudentCommand = new Command<Student>(DeleteStudent);
+        OpenDetailsCommand = new Command<Student>(async student =>
+            await OpenDetailsAsync(student));
     }
 
     public string FullName
@@ -83,6 +90,38 @@ public class StudentViewModel : INotifyPropertyChanged
         FullName = string.Empty;
         Group = string.Empty;
         AverageScore = 0;
+    }
+
+    private void DeleteStudent(Student? student)
+    {
+        if (student is not null)
+            Students.Remove(student);
+    }
+
+    private async Task OpenDetailsAsync(Student? student)
+    {
+        if (student is null)
+            return;
+
+        var parameters = new Dictionary<string, object>
+        {
+            { "SelectedStudent", student }
+        };
+
+        await Shell.Current.GoToAsync("studentdetail", parameters);
+    }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("OriginalStudent", out var originalValue)
+            && originalValue is Student originalStudent
+            && query.TryGetValue("UpdatedStudent", out var updatedValue)
+            && updatedValue is Student updatedStudent)
+        {
+            var index = Students.IndexOf(originalStudent);
+            if (index >= 0)
+                Students[index] = updatedStudent;
+        }
     }
 
     private bool CanAddStudent()

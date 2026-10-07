@@ -7,4 +7,5 @@ public class StudentDetailViewModel
     public string Group { get; } = string.Empty;
 
     public double AverageScore { get; }
+    
 }

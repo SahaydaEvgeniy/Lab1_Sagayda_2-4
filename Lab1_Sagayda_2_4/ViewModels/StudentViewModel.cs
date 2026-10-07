@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
@@ -13,9 +13,13 @@ public class StudentViewModel : INotifyPropertyChanged
 
     public ICommand AddStudentCommand { get; }
 
+    public ICommand OpenDetailsCommand { get; }
+
     public StudentViewModel()
     {
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
+        OpenDetailsCommand = new Command<Student>(async student =>
+            await OpenDetailsAsync(student));
     }
 
     public string FullName
@@ -83,6 +87,14 @@ public class StudentViewModel : INotifyPropertyChanged
         FullName = string.Empty;
         Group = string.Empty;
         AverageScore = 0;
+    }
+
+    private async Task OpenDetailsAsync(Student? student)
+    {
+        if (student is null)
+            return;
+
+        await Shell.Current.GoToAsync("studentdetail");
     }
 
     private bool CanAddStudent()

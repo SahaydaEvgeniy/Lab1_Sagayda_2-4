@@ -44,6 +44,7 @@
                 Text="{Binding AverageScore,
                                Mode=OneWay,
                                StringFormat='Середній бал: {0:F2}'}" />
+
             <Button
                 Command="{Binding AddStudentCommand}"
                 Text="Додати студента" />
@@ -68,29 +69,29 @@
                     <DataTemplate x:DataType="models:Student">
 
                         <Border
-                Margin="0,5"
-                Padding="12"
-                Stroke="Gray"
-                StrokeShape="RoundRectangle 8">
+                            Margin="0,5"
+                            Padding="12"
+                            Stroke="Gray"
+                            StrokeShape="RoundRectangle 8">
 
                             <Grid
-                    ColumnDefinitions="2*,*,Auto"
-                    ColumnSpacing="10">
+                                ColumnDefinitions="2*,*,Auto"
+                                ColumnSpacing="10">
 
                                 <Label
-                        Grid.Column="0"
-                        FontAttributes="Bold"
-                        Text="{Binding FullName}" />
+                                    Grid.Column="0"
+                                    FontAttributes="Bold"
+                                    Text="{Binding FullName}" />
 
                                 <Label
-                        Grid.Column="1"
-                        Text="{Binding Group,
-                                       StringFormat='Група: {0}'}" />
+                                    Grid.Column="1"
+                                    Text="{Binding Group,
+                                                   StringFormat='Група: {0}'}" />
 
                                 <Label
-                        Grid.Column="2"
-                        Text="{Binding AverageScore,
-                                       StringFormat='Бал: {0:F2}'}" />
+                                    Grid.Column="2"
+                                    Text="{Binding AverageScore,
+                                                   StringFormat='Бал: {0:F2}'}" />
 
                             </Grid>
                         </Border>
@@ -99,8 +100,6 @@
                 </CollectionView.ItemTemplate>
 
             </CollectionView>
-
-
 
             <Border
                 Padding="15"

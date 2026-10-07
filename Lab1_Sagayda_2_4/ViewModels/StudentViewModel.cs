@@ -5,7 +5,7 @@ using Lab1_Sagayda_2_4.Models;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
-public class StudentViewModel : INotifyPropertyChanged
+public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 {
     private readonly Student _student = new();
 
@@ -100,6 +100,19 @@ public class StudentViewModel : INotifyPropertyChanged
         };
 
         await Shell.Current.GoToAsync("studentdetail", parameters);
+    }
+
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
+    {
+        if (query.TryGetValue("OriginalStudent", out var originalValue)
+            && originalValue is Student originalStudent
+            && query.TryGetValue("UpdatedStudent", out var updatedValue)
+            && updatedValue is Student updatedStudent)
+        {
+            var index = Students.IndexOf(originalStudent);
+            if (index >= 0)
+                Students[index] = updatedStudent;
+        }
     }
 
     private bool CanAddStudent()

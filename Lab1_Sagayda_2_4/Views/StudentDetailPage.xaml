@@ -27,6 +27,16 @@
             <Label Text="Середній бал" />
             <Label Text="{Binding AverageScore, StringFormat='{0:F2}'}" />
 
+            <Stepper
+                Minimum="0"
+                Maximum="5"
+                Increment="0.1"
+                Value="{Binding AverageScore, Mode=TwoWay}" />
+
+            <Button
+                Command="{Binding SaveCommand}"
+                Text="Зберегти" />
+
             <Button
                 Command="{Binding GoBackCommand}"
                 Text="Назад" />

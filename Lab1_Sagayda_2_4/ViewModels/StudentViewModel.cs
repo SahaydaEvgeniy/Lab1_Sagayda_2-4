@@ -94,7 +94,12 @@ public class StudentViewModel : INotifyPropertyChanged
         if (student is null)
             return;
 
-        await Shell.Current.GoToAsync("studentdetail");
+        var parameters = new Dictionary<string, object>
+        {
+            { "SelectedStudent", student }
+        };
+
+        await Shell.Current.GoToAsync("studentdetail", parameters);
     }
 
     private bool CanAddStudent()

@@ -15,9 +15,12 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public ICommand OpenDetailsCommand { get; }
 
+    public ICommand DeleteStudentCommand { get; }
+
     public StudentViewModel()
     {
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
+        DeleteStudentCommand = new Command<Student>(DeleteStudent);
         OpenDetailsCommand = new Command<Student>(async student =>
             await OpenDetailsAsync(student));
     }
@@ -87,6 +90,12 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         FullName = string.Empty;
         Group = string.Empty;
         AverageScore = 0;
+    }
+
+    private void DeleteStudent(Student? student)
+    {
+        if (student is not null)
+            Students.Remove(student);
     }
 
     private async Task OpenDetailsAsync(Student? student)

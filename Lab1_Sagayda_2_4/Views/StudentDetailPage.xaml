@@ -27,11 +27,20 @@
             <Label Text="Середній бал" />
             <Label Text="{Binding AverageScore, StringFormat='{0:F2}'}" />
 
-            <Stepper
-                Minimum="0"
-                Maximum="5"
-                Increment="0.1"
-                Value="{Binding AverageScore, Mode=TwoWay}" />
+            <HorizontalStackLayout Spacing="12">
+                <Button
+                    Text="−"
+                    FontSize="24"
+                    WidthRequest="56"
+                    Command="{Binding DecreaseScoreCommand}"
+                    SemanticProperties.Description="Зменшити середній бал на 0,1" />
+                <Button
+                    Text="+"
+                    FontSize="24"
+                    WidthRequest="56"
+                    Command="{Binding IncreaseScoreCommand}"
+                    SemanticProperties.Description="Збільшити середній бал на 0,1" />
+            </HorizontalStackLayout>
 
             <Button
                 Command="{Binding SaveCommand}"

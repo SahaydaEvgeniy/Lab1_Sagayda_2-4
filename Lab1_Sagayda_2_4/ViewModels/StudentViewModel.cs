@@ -17,6 +17,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public ICommand LoadCommand { get; }
 
+    public ICommand OpenSettingsCommand { get; }
+
     public ICommand AddStudentCommand { get; }
 
     public ICommand OpenDetailsCommand { get; }
@@ -28,6 +30,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         _appStateService = appStateService;
         Students = appStateService.Students;
         LoadCommand = new Command(LoadStudents);
+        OpenSettingsCommand = new Command(async () =>
+            await Shell.Current.GoToAsync("settings"));
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
         DeleteStudentCommand = new Command<Student>(DeleteStudent);
         OpenDetailsCommand = new Command<Student>(async student =>

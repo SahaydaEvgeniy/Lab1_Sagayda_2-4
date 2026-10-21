@@ -23,6 +23,9 @@ namespace Lab1_Sagayda_2_4
 #endif
 
             builder.Services.AddSingleton<IAppStateService, AppStateService>();
+            builder.Services.AddSingleton<ThemeService>();
+            builder.Services.AddTransient<SettingsViewModel>();
+            builder.Services.AddTransient<SettingsPage>();
             builder.Services.AddTransient<StudentViewModel>();
             builder.Services.AddTransient<StudentDetailViewModel>();
             builder.Services.AddTransient<MainPage>();

@@ -6,9 +6,10 @@ namespace Lab1_Sagayda_2_4
     {
         private readonly AppShell _appShell;
 
-        public App(AppShell appShell)
+        public App(AppShell appShell, Services.ThemeService themeService)
         {
             InitializeComponent();
+            UserAppTheme = themeService.SelectedTheme;
             _appShell = appShell;
         }
 

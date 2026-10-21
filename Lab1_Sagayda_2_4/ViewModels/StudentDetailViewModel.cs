@@ -16,9 +16,19 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
     public ICommand SaveCommand { get; }
 
+    public ICommand DecreaseScoreCommand { get; }
+
+    public ICommand IncreaseScoreCommand { get; }
+
     public StudentDetailViewModel(IAppStateService appStateService)
     {
         _appStateService = appStateService;
+        DecreaseScoreCommand = new Command(
+            () => AverageScore = Math.Max(0, Math.Round(AverageScore - 0.1, 2)),
+            () => AverageScore > 0);
+        IncreaseScoreCommand = new Command(
+            () => AverageScore = Math.Min(5, Math.Round(AverageScore + 0.1, 2)),
+            () => AverageScore < 5);
         GoBackCommand = new Command(async () =>
             await Shell.Current.GoToAsync(".."));
         SaveCommand = new Command(async () => await SaveAsync(),
@@ -41,6 +51,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             {
                 _averageScore = value;
                 OnPropertyChanged(nameof(AverageScore));
+                ((Command)DecreaseScoreCommand).ChangeCanExecute();
+                ((Command)IncreaseScoreCommand).ChangeCanExecute();
             }
         }
     }

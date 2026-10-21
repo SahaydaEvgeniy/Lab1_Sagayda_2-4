@@ -10,4 +10,21 @@ public partial class MainPage : ContentPage
 
         BindingContext = viewModel;
     }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        if (BindingContext is StudentViewModel viewModel
+            && viewModel.LoadCommand.CanExecute(null))
+        {
+            viewModel.LoadCommand.Execute(null);
+        }
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        System.Diagnostics.Debug.WriteLine("[Student List] OnDisappearing: сторінку списку приховано.");
+    }
 }

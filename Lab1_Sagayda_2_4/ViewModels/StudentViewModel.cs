@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
 using Lab1_Sagayda_2_4.Services;
@@ -12,7 +13,9 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     private readonly IAppStateService _appStateService;
 
-    public ObservableCollection<Student> Students => _appStateService.Students;
+    public ObservableCollection<Student> Students { get; private set; }
+
+    public ICommand LoadCommand { get; }
 
     public ICommand AddStudentCommand { get; }
 
@@ -23,6 +26,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
     public StudentViewModel(IAppStateService appStateService)
     {
         _appStateService = appStateService;
+        Students = appStateService.Students;
+        LoadCommand = new Command(LoadStudents);
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
         DeleteStudentCommand = new Command<Student>(DeleteStudent);
         OpenDetailsCommand = new Command<Student>(async student =>
@@ -81,6 +86,14 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public bool IsHighScore =>
         AverageScore >= 4.0;
+
+    private void LoadStudents()
+    {
+        // Reuse the session collection so repeated appearances do not duplicate students.
+        Students = _appStateService.Students;
+        OnPropertyChanged(nameof(Students));
+        Debug.WriteLine($"[Student List] LoadCommand: список завантажено зі стану сесії. Студентів: {Students.Count}.");
+    }
 
     private void AddStudent()
     {

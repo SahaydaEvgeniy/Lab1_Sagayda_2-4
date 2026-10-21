@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics;
 
 namespace Lab1_Sagayda_2_4
 {
@@ -11,7 +11,18 @@ namespace Lab1_Sagayda_2_4
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            var window = new Window(new AppShell());
+
+            window.Stopped += (_, _) =>
+                Debug.WriteLine("[App Lifecycle] Stopped: застосунок перейшов у фон.");
+
+            window.Resumed += (_, _) =>
+                Debug.WriteLine("[App Lifecycle] Resumed: застосунок повернувся з фону.");
+
+            window.Destroying += (_, _) =>
+                Debug.WriteLine("[App Lifecycle] Destroying: вікно застосунку закривається.");
+
+            return window;
         }
     }
 }

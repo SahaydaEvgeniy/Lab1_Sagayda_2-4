@@ -4,14 +4,17 @@ namespace Lab1_Sagayda_2_4
 {
     public partial class App : Application
     {
-        public App()
+        private readonly AppShell _appShell;
+
+        public App(AppShell appShell)
         {
             InitializeComponent();
+            _appShell = appShell;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            var window = new Window(new AppShell());
+            var window = new Window(_appShell);
 
             window.Stopped += (_, _) =>
                 Debug.WriteLine("[App Lifecycle] Stopped: застосунок перейшов у фон.");

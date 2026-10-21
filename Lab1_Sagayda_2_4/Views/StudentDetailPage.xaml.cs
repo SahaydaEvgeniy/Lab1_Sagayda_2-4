@@ -4,9 +4,9 @@ namespace Lab1_Sagayda_2_4.Views;
 
 public partial class StudentDetailPage : ContentPage
 {
-    public StudentDetailPage()
+    public StudentDetailPage(StudentDetailViewModel viewModel)
     {
         InitializeComponent();
-        BindingContext = new StudentDetailViewModel();
+        BindingContext = viewModel;
     }
 }

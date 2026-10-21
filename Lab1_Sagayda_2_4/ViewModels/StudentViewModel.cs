@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
+using Lab1_Sagayda_2_4.Services;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
@@ -9,7 +10,9 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 {
     private readonly Student _student = new();
 
-    public ObservableCollection<Student> Students { get; } = new();
+    private readonly IAppStateService _appStateService;
+
+    public ObservableCollection<Student> Students => _appStateService.Students;
 
     public ICommand AddStudentCommand { get; }
 
@@ -17,8 +20,9 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public ICommand DeleteStudentCommand { get; }
 
-    public StudentViewModel()
+    public StudentViewModel(IAppStateService appStateService)
     {
+        _appStateService = appStateService;
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
         DeleteStudentCommand = new Command<Student>(DeleteStudent);
         OpenDetailsCommand = new Command<Student>(async student =>

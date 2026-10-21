@@ -37,6 +37,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
     public string FullName { get; private set; } = string.Empty;
 
+    public Guid StudentId => _originalStudent?.Id ?? Guid.Empty;
+
     public string Group { get; private set; } = string.Empty;
 
     public double AverageScore
@@ -68,6 +70,7 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             AverageScore = student.AverageScore;
 
             OnPropertyChanged(nameof(FullName));
+            OnPropertyChanged(nameof(StudentId));
             OnPropertyChanged(nameof(Group));
             RestoreDraft();
             ((Command)SaveCommand).ChangeCanExecute();
@@ -106,6 +109,7 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
         var updatedStudent = new Student
         {
+            Id = _originalStudent.Id,
             FullName = FullName,
             Group = Group,
             AverageScore = AverageScore

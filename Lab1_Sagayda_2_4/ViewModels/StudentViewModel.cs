@@ -13,6 +13,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     private readonly IAppStateService _appStateService;
 
+    public IAppStateService AppState => _appStateService;
+
     public ObservableCollection<Student> Students { get; private set; }
 
     public ICommand LoadCommand { get; }
@@ -139,7 +141,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
             && query.TryGetValue("UpdatedStudent", out var updatedValue)
             && updatedValue is Student updatedStudent)
         {
-            var index = Students.IndexOf(originalStudent);
+            var existingStudent = _appStateService.FindStudent(originalStudent.Id);
+            var index = existingStudent is null ? -1 : Students.IndexOf(existingStudent);
             if (index >= 0)
                 Students[index] = updatedStudent;
         }

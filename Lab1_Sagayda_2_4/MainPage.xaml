@@ -60,6 +60,11 @@
 
             <Label Text="ПІБ студента" />
 
+            <Label
+                Text="{Binding AppState.StorageError}"
+                IsVisible="{Binding AppState.HasStorageError}"
+                TextColor="{AppThemeBinding Light=Red, Dark=LightCoral}" />
+
             <Entry
                 Placeholder="Введіть ПІБ"
                 Text="{Binding FullName, Mode=TwoWay}" />
@@ -92,72 +97,84 @@
                 FontSize="22"
                 Text="Список студентів" />
 
-            <CollectionView
-                HeightRequest="300"
-                ItemsSource="{Binding Students, Mode=OneWay}">
+            <Grid HeightRequest="300">
+                <CollectionView
+                    ItemsSource="{Binding Students, Mode=OneWay}">
 
-                <CollectionView.EmptyView>
-                    <Label
-                        HorizontalOptions="Center"
-                        Text="Список студентів поки порожній"
-                        TextColor="Gray" />
-                </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:Student">
 
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:Student">
+                            <Border
+                                Margin="0,5"
+                                Padding="12"
+                                Stroke="Gray"
+                                StrokeShape="RoundRectangle 8">
 
-                        <Border
-                            Margin="0,5"
-                            Padding="12"
-                            Stroke="Gray"
-                            StrokeShape="RoundRectangle 8">
+                                <Grid
+                                    RowDefinitions="Auto,Auto"
+                                    RowSpacing="10"
+                                    ColumnDefinitions="2*,*,Auto"
+                                    ColumnSpacing="10">
 
-                            <Grid
-                                RowDefinitions="Auto,Auto"
-                                RowSpacing="10"
-                                ColumnDefinitions="2*,*,Auto"
-                                ColumnSpacing="10">
+                                    <Label
+                                        Grid.Column="0"
+                                        FontAttributes="Bold"
+                                        Text="{Binding FullName}" />
 
-                                <Label
-                                    Grid.Column="0"
-                                    FontAttributes="Bold"
-                                    Text="{Binding FullName}" />
+                                    <Label
+                                        Grid.Column="1"
+                                        Text="{Binding Group,
+                                                       StringFormat='Група: {0}'}" />
 
-                                <Label
-                                    Grid.Column="1"
-                                    Text="{Binding Group,
-                                                   StringFormat='Група: {0}'}" />
+                                    <Label
+                                        Grid.Column="2"
+                                        Text="{Binding AverageScore,
+                                                       StringFormat='Бал: {0:F2}'}" />
 
-                                <Label
-                                    Grid.Column="2"
-                                    Text="{Binding AverageScore,
-                                                   StringFormat='Бал: {0:F2}'}" />
+                                    <Button
+                                        Grid.Row="1"
+                                        HorizontalOptions="Start"
+                                        Command="{Binding OpenDetailsCommand, Source={RelativeSource AncestorType={x:Type viewModels:StudentViewModel}}, x:DataType=viewModels:StudentViewModel}"
+                                        CommandParameter="{Binding .}"
+                                        Text="Детальніше" />
 
-                                <Button
-                                    Grid.Row="1"
-                                    HorizontalOptions="Start"
-                                    Command="{Binding OpenDetailsCommand, Source={RelativeSource AncestorType={x:Type viewModels:StudentViewModel}}, x:DataType=viewModels:StudentViewModel}"
-                                    CommandParameter="{Binding .}"
-                                    Text="Детальніше" />
+                                    <Button
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Grid.ColumnSpan="2"
+                                        HorizontalOptions="End"
+                                        BackgroundColor="Red"
+                                        TextColor="White"
+                                        Command="{Binding DeleteStudentCommand, Source={RelativeSource AncestorType={x:Type viewModels:StudentViewModel}}, x:DataType=viewModels:StudentViewModel}"
+                                        CommandParameter="{Binding .}"
+                                        Text="Видалити" />
 
-                                <Button
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    Grid.ColumnSpan="2"
-                                    HorizontalOptions="End"
-                                    BackgroundColor="Red"
-                                    TextColor="White"
-                                    Command="{Binding DeleteStudentCommand, Source={RelativeSource AncestorType={x:Type viewModels:StudentViewModel}}, x:DataType=viewModels:StudentViewModel}"
-                                    CommandParameter="{Binding .}"
-                                    Text="Видалити" />
+                                </Grid>
+                            </Border>
 
-                            </Grid>
-                        </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
 
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
+                </CollectionView>
 
-            </CollectionView>
+                <!-- Keep the empty message outside the native collection's EmptyView. -->
+                <Label
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    InputTransparent="True"
+                    IsVisible="False"
+                    Text="Список студентів поки порожній"
+                    TextColor="{AppThemeBinding Light=#6E6E6E, Dark=#C8C8C8}">
+                    <Label.Triggers>
+                        <DataTrigger
+                            TargetType="Label"
+                            Binding="{Binding Students.Count}"
+                            Value="0">
+                            <Setter Property="IsVisible" Value="True" />
+                        </DataTrigger>
+                    </Label.Triggers>
+                </Label>
+            </Grid>
 
             <Border
                 Padding="15"

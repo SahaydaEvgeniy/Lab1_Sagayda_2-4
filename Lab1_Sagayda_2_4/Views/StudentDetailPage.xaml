@@ -21,6 +21,9 @@
             <Label Text="ПІБ студента" />
             <Label Text="{Binding FullName}" />
 
+            <Label Text="Ідентифікатор студента" />
+            <Label Text="{Binding StudentId}" LineBreakMode="CharacterWrap" />
+
             <Label Text="Група" />
             <Label Text="{Binding Group}" />
 

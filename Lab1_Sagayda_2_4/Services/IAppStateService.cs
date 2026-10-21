@@ -6,4 +6,6 @@ namespace Lab1_Sagayda_2_4.Services;
 public interface IAppStateService
 {
     ObservableCollection<Student> Students { get; }
+
+    StudentEditDraft? StudentDraft { get; set; }
 }

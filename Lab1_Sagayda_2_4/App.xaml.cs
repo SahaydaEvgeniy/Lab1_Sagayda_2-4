@@ -17,10 +17,20 @@ namespace Lab1_Sagayda_2_4
             var window = new Window(_appShell);
 
             window.Stopped += (_, _) =>
+            {
+                if (_appShell.CurrentPage?.BindingContext is ViewModels.StudentDetailViewModel viewModel)
+                    viewModel.SaveDraft();
+
                 Debug.WriteLine("[App Lifecycle] Stopped: застосунок перейшов у фон.");
+            };
 
             window.Resumed += (_, _) =>
+            {
+                if (_appShell.CurrentPage?.BindingContext is ViewModels.StudentDetailViewModel viewModel)
+                    viewModel.RestoreDraft();
+
                 Debug.WriteLine("[App Lifecycle] Resumed: застосунок повернувся з фону.");
+            };
 
             window.Destroying += (_, _) =>
                 Debug.WriteLine("[App Lifecycle] Destroying: вікно застосунку закривається.");

@@ -1,20 +1,24 @@
 using System.ComponentModel;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
+using Lab1_Sagayda_2_4.Services;
+using System.Diagnostics;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
 public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 {
     private Student? _originalStudent;
+    private readonly IAppStateService _appStateService;
     private double _averageScore;
 
     public ICommand GoBackCommand { get; }
 
     public ICommand SaveCommand { get; }
 
-    public StudentDetailViewModel()
+    public StudentDetailViewModel(IAppStateService appStateService)
     {
+        _appStateService = appStateService;
         GoBackCommand = new Command(async () =>
             await Shell.Current.GoToAsync(".."));
         SaveCommand = new Command(async () => await SaveAsync(),
@@ -53,8 +57,34 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
             OnPropertyChanged(nameof(FullName));
             OnPropertyChanged(nameof(Group));
+            RestoreDraft();
             ((Command)SaveCommand).ChangeCanExecute();
         }
+    }
+
+    public void SaveDraft()
+    {
+        if (_originalStudent is null)
+            return;
+
+        _appStateService.StudentDraft = new StudentEditDraft(_originalStudent, AverageScore);
+        Debug.WriteLine("[Student Draft] Saved: чернетку бала збережено в стані сесії.");
+    }
+
+    public void RestoreDraft()
+    {
+        var draft = _appStateService.StudentDraft;
+        if (draft is not null && ReferenceEquals(draft.OriginalStudent, _originalStudent))
+        {
+            AverageScore = draft.AverageScore;
+            Debug.WriteLine("[Student Draft] Restored: чернетку бала відновлено.");
+        }
+    }
+
+    public void ClearDraft()
+    {
+        if (ReferenceEquals(_appStateService.StudentDraft?.OriginalStudent, _originalStudent))
+            _appStateService.StudentDraft = null;
     }
 
     private async Task SaveAsync()

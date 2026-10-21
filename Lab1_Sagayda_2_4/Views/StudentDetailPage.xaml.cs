@@ -9,4 +9,16 @@ public partial class StudentDetailPage : ContentPage
         InitializeComponent();
         BindingContext = viewModel;
     }
+
+    protected override void OnNavigatedFrom(NavigatedFromEventArgs args)
+    {
+        base.OnNavigatedFrom(args);
+
+        // A popped page ends editing; hiding the app does not cancel the draft.
+        if (!Navigation.NavigationStack.Contains(this)
+            && BindingContext is StudentDetailViewModel viewModel)
+        {
+            viewModel.ClearDraft();
+        }
+    }
 }

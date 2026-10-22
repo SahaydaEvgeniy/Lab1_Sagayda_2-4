@@ -5,12 +5,21 @@ namespace Lab1_Sagayda_2_4
     public partial class App : Application
     {
         private readonly AppShell _appShell;
+        private readonly Services.DeepLinkService _deepLinkService;
 
-        public App(AppShell appShell, Services.ThemeService themeService)
+        public App(AppShell appShell, Services.ThemeService themeService,
+            Services.DeepLinkService deepLinkService)
         {
             InitializeComponent();
             UserAppTheme = themeService.SelectedTheme;
             _appShell = appShell;
+            _deepLinkService = deepLinkService;
+        }
+
+        protected override void OnAppLinkRequestReceived(Uri uri)
+        {
+            base.OnAppLinkRequestReceived(uri);
+            _deepLinkService.ReceiveLink(uri);
         }
 
         protected override Window CreateWindow(IActivationState? activationState)

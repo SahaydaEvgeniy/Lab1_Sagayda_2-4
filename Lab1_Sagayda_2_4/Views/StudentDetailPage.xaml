@@ -24,6 +24,10 @@
             <Label Text="Ідентифікатор студента" />
             <Label Text="{Binding StudentId}" LineBreakMode="CharacterWrap" />
 
+            <Label Text="Посилання на студента (Android)" />
+            <Label Text="{Binding StudentLink}" LineBreakMode="CharacterWrap" />
+            <Button Command="{Binding CopyLinkCommand}" Text="Скопіювати посилання" />
+
             <Label Text="Група" />
             <Label Text="{Binding Group}" />
 

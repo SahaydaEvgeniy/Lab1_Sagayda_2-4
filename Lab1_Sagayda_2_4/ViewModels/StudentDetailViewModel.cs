@@ -20,9 +20,14 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
     public ICommand IncreaseScoreCommand { get; }
 
+    public ICommand CopyLinkCommand { get; }
+
     public StudentDetailViewModel(IAppStateService appStateService)
     {
         _appStateService = appStateService;
+        CopyLinkCommand = new Command(async () =>
+            await Clipboard.Default.SetTextAsync(StudentLink),
+            () => _originalStudent is not null);
         DecreaseScoreCommand = new Command(
             () => AverageScore = Math.Max(0, Math.Round(AverageScore - 0.1, 2)),
             () => AverageScore > 0);
@@ -38,6 +43,10 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
     public string FullName { get; private set; } = string.Empty;
 
     public Guid StudentId => _originalStudent?.Id ?? Guid.Empty;
+
+    public string StudentLink => _originalStudent is null
+        ? string.Empty
+        : StudentDeepLink.Create(StudentId);
 
     public string Group { get; private set; } = string.Empty;
 
@@ -71,6 +80,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
             OnPropertyChanged(nameof(FullName));
             OnPropertyChanged(nameof(StudentId));
+            OnPropertyChanged(nameof(StudentLink));
+            ((Command)CopyLinkCommand).ChangeCanExecute();
             OnPropertyChanged(nameof(Group));
             RestoreDraft();
             ((Command)SaveCommand).ChangeCanExecute();

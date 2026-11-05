@@ -1,20 +1,39 @@
 using System.ComponentModel;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
+using Lab1_Sagayda_2_4.Services;
+using System.Diagnostics;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
 public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 {
     private Student? _originalStudent;
+    private readonly IAppStateService _appStateService;
     private double _averageScore;
 
     public ICommand GoBackCommand { get; }
 
     public ICommand SaveCommand { get; }
 
-    public StudentDetailViewModel()
+    public ICommand DecreaseScoreCommand { get; }
+
+    public ICommand IncreaseScoreCommand { get; }
+
+    public ICommand CopyLinkCommand { get; }
+
+    public StudentDetailViewModel(IAppStateService appStateService)
     {
+        _appStateService = appStateService;
+        CopyLinkCommand = new Command(async () =>
+            await Clipboard.Default.SetTextAsync(StudentLink),
+            () => _originalStudent is not null);
+        DecreaseScoreCommand = new Command(
+            () => AverageScore = Math.Max(0, Math.Round(AverageScore - 0.1, 2)),
+            () => AverageScore > 0);
+        IncreaseScoreCommand = new Command(
+            () => AverageScore = Math.Min(5, Math.Round(AverageScore + 0.1, 2)),
+            () => AverageScore < 5);
         GoBackCommand = new Command(async () =>
             await Shell.Current.GoToAsync(".."));
         SaveCommand = new Command(async () => await SaveAsync(),
@@ -22,6 +41,12 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
     }
 
     public string FullName { get; private set; } = string.Empty;
+
+    public Guid StudentId => _originalStudent?.Id ?? Guid.Empty;
+
+    public string StudentLink => _originalStudent is null
+        ? string.Empty
+        : StudentDeepLink.Create(StudentId);
 
     public string Group { get; private set; } = string.Empty;
 
@@ -37,6 +62,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             {
                 _averageScore = value;
                 OnPropertyChanged(nameof(AverageScore));
+                ((Command)DecreaseScoreCommand).ChangeCanExecute();
+                ((Command)IncreaseScoreCommand).ChangeCanExecute();
             }
         }
     }
@@ -52,9 +79,38 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             AverageScore = student.AverageScore;
 
             OnPropertyChanged(nameof(FullName));
+            OnPropertyChanged(nameof(StudentId));
+            OnPropertyChanged(nameof(StudentLink));
+            ((Command)CopyLinkCommand).ChangeCanExecute();
             OnPropertyChanged(nameof(Group));
+            RestoreDraft();
             ((Command)SaveCommand).ChangeCanExecute();
         }
+    }
+
+    public void SaveDraft()
+    {
+        if (_originalStudent is null)
+            return;
+
+        _appStateService.StudentDraft = new StudentEditDraft(_originalStudent, AverageScore);
+        Debug.WriteLine("[Student Draft] Saved: чернетку бала збережено в стані сесії.");
+    }
+
+    public void RestoreDraft()
+    {
+        var draft = _appStateService.StudentDraft;
+        if (draft is not null && ReferenceEquals(draft.OriginalStudent, _originalStudent))
+        {
+            AverageScore = draft.AverageScore;
+            Debug.WriteLine("[Student Draft] Restored: чернетку бала відновлено.");
+        }
+    }
+
+    public void ClearDraft()
+    {
+        if (ReferenceEquals(_appStateService.StudentDraft?.OriginalStudent, _originalStudent))
+            _appStateService.StudentDraft = null;
     }
 
     private async Task SaveAsync()
@@ -64,6 +120,7 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
         var updatedStudent = new Student
         {
+            Id = _originalStudent.Id,
             FullName = FullName,
             Group = Group,
             AverageScore = AverageScore

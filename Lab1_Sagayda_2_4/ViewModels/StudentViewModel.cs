@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
+using Lab1_Sagayda_2_4.Services;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
@@ -9,7 +11,15 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 {
     private readonly Student _student = new();
 
-    public ObservableCollection<Student> Students { get; } = new();
+    private readonly IAppStateService _appStateService;
+
+    public IAppStateService AppState => _appStateService;
+
+    public ObservableCollection<Student> Students { get; private set; }
+
+    public ICommand LoadCommand { get; }
+
+    public ICommand OpenSettingsCommand { get; }
 
     public ICommand AddStudentCommand { get; }
 
@@ -17,8 +27,13 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public ICommand DeleteStudentCommand { get; }
 
-    public StudentViewModel()
+    public StudentViewModel(IAppStateService appStateService)
     {
+        _appStateService = appStateService;
+        Students = appStateService.Students;
+        LoadCommand = new Command(LoadStudents);
+        OpenSettingsCommand = new Command(async () =>
+            await Shell.Current.GoToAsync("settings"));
         AddStudentCommand = new Command(AddStudent, CanAddStudent);
         DeleteStudentCommand = new Command<Student>(DeleteStudent);
         OpenDetailsCommand = new Command<Student>(async student =>
@@ -78,6 +93,14 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
     public bool IsHighScore =>
         AverageScore >= 4.0;
 
+    private void LoadStudents()
+    {
+        // Reuse the session collection so repeated appearances do not duplicate students.
+        Students = _appStateService.Students;
+        OnPropertyChanged(nameof(Students));
+        Debug.WriteLine($"[Student List] LoadCommand: список завантажено зі стану сесії. Студентів: {Students.Count}.");
+    }
+
     private void AddStudent()
     {
         Students.Add(new Student
@@ -118,7 +141,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
             && query.TryGetValue("UpdatedStudent", out var updatedValue)
             && updatedValue is Student updatedStudent)
         {
-            var index = Students.IndexOf(originalStudent);
+            var existingStudent = _appStateService.FindStudent(originalStudent.Id);
+            var index = existingStudent is null ? -1 : Students.IndexOf(existingStudent);
             if (index >= 0)
                 Students[index] = updatedStudent;
         }

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    x:Class="Lab1_Sagayda_2_4.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:viewModels="clr-namespace:Lab1_Sagayda_2_4.ViewModels"
+    x:DataType="viewModels:SettingsViewModel"
+    Title="Налаштування">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="18">
+            <Label
+                FontAttributes="Bold"
+                FontSize="26"
+                Text="Тема оформлення" />
+
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label Text="Темна тема" VerticalOptions="Center" />
+                <Switch
+                    Grid.Column="1"
+                    IsToggled="{Binding IsDarkTheme, Mode=TwoWay}"
+                    SemanticProperties.Description="Темна тема" />
+            </Grid>
+
+            <Label Text="{Binding ThemeDescription}" />
+            <Label Text="Вибір зберігається автоматично та застосовується до всіх сторінок." />
+
+            <Button Command="{Binding GoBackCommand}" Text="Назад" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

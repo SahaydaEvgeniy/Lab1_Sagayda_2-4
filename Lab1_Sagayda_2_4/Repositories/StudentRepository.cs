@@ -7,7 +7,7 @@ namespace Lab1_Sagayda_2_4.Repositories;
 
 public class StudentRepository : IStudentRepository
 {
-    private const int CurrentSchemaVersion = 2;
+    private const int CurrentSchemaVersion = 3;
     private readonly SQLiteAsyncConnection _database;
     private readonly string _databasePath;
     private readonly string _legacyJsonPath;
@@ -46,6 +46,15 @@ public class StudentRepository : IStudentRepository
                     connection.Execute("CREATE TABLE IF NOT EXISTS AppMetadata (Key TEXT PRIMARY KEY NOT NULL, Value TEXT NOT NULL)");
                     ImportLegacyStudents(connection);
                     connection.Execute("PRAGMA user_version = 2");
+                }
+
+                if (version < 3)
+                {
+                    connection.CreateTable<SyncQueueItem>();
+                    // Existing local students also need an initial upload to the future server.
+                    foreach (var student in connection.Table<Student>().ToList())
+                        EnqueueChange(connection, student, "Insert");
+                    connection.Execute("PRAGMA user_version = 3");
                 }
             });
 
@@ -114,9 +123,11 @@ public class StudentRepository : IStudentRepository
         var affectedRows = 0;
         await _database.RunInTransactionAsync(connection =>
         {
-            affectedRows = connection.Find<Student>(student.Id) is null
+            var isNew = connection.Find<Student>(student.Id) is null;
+            affectedRows = isNew
                 ? connection.Insert(student)
                 : connection.Update(student);
+            EnqueueChange(connection, student, isNew ? "Insert" : "Update");
         });
         return affectedRows;
     }
@@ -125,6 +136,38 @@ public class StudentRepository : IStudentRepository
     {
         ArgumentNullException.ThrowIfNull(student);
         await InitializeAsync();
-        return await _database.DeleteAsync<Student>(student.Id);
+        var affectedRows = 0;
+        await _database.RunInTransactionAsync(connection =>
+        {
+            var existing = connection.Find<Student>(student.Id);
+            if (existing is null)
+                return;
+
+            affectedRows = connection.Delete<Student>(student.Id);
+            EnqueueChange(connection, existing, "Delete");
+        });
+        return affectedRows;
+    }
+
+    public async Task<int> GetPendingChangeCountAsync()
+    {
+        await InitializeAsync();
+        return await _database.Table<SyncQueueItem>().CountAsync();
+    }
+
+    public async Task<List<SyncQueueItem>> GetPendingChangesAsync()
+    {
+        await InitializeAsync();
+        return await _database.Table<SyncQueueItem>().OrderBy(item => item.Sequence).ToListAsync();
+    }
+
+    private static void EnqueueChange(SQLiteConnection connection, Student student, string operation)
+    {
+        connection.Insert(new SyncQueueItem
+        {
+            StudentId = student.Id,
+            Operation = operation,
+            PayloadJson = JsonSerializer.Serialize(student)
+        });
     }
 }

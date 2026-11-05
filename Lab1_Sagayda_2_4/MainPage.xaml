@@ -112,6 +112,11 @@
                     Text="Оновити список" />
             </Grid>
 
+            <Label Text="{Binding PendingSyncSummary}" />
+            <Label
+                Text="Зміни зберігаються на пристрої до синхронізації."
+                FontSize="12" />
+
             <ActivityIndicator
                 IsRunning="{Binding IsBusy}"
                 IsVisible="{Binding IsBusy}"

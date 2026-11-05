@@ -36,6 +36,12 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
+    public int? PendingChangeCount { get; private set; }
+
+    public string PendingSyncSummary => PendingChangeCount is int count
+        ? $"Очікують синхронізації: {count}"
+        : "Черга синхронізації: кількість невідома";
+
     public ObservableCollection<Student> Students { get; private set; }
 
     public ICommand LoadCommand { get; }
@@ -129,6 +135,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         foreach (var student in students)
             Students.Add(student);
         Debug.WriteLine($"[Student List] Loaded from SQLite: {Students.Count}.");
+        await RefreshPendingCountAsync();
     }
 
     private async Task AddStudentAsync()
@@ -145,6 +152,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         FullName = string.Empty;
         Group = string.Empty;
         AverageScore = 0;
+        await RefreshPendingCountAsync();
     }
 
     private async Task DeleteStudentAsync(Student? student)
@@ -155,6 +163,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
             var current = _appStateService.FindStudent(student.Id);
             if (current is not null)
                 Students.Remove(current);
+            await RefreshPendingCountAsync();
         }
     }
 
@@ -183,6 +192,22 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
             if (index >= 0)
                 Students[index] = updatedStudent;
         }
+    }
+
+    private async Task RefreshPendingCountAsync()
+    {
+        try
+        {
+            PendingChangeCount = await _repository.GetPendingChangeCountAsync();
+        }
+        catch (Exception ex)
+        {
+            // A counter failure must not present an already committed CRUD operation as failed.
+            PendingChangeCount = null;
+            Debug.WriteLine($"[Sync Queue] Count error: {ex}");
+        }
+        OnPropertyChanged(nameof(PendingChangeCount));
+        OnPropertyChanged(nameof(PendingSyncSummary));
     }
 
     private bool CanAddStudent()

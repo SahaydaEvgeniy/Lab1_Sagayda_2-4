@@ -73,6 +73,9 @@
 
 	<ItemGroup>
 	  <Folder Include="Views\" />
+	  <Compile Remove="tools\**\*.cs" />
+	  <Content Remove="tools\**\*" />
+	  <None Remove="tools\**\*" />
 	</ItemGroup>
 
 </Project>

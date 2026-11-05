@@ -84,6 +84,7 @@ public sealed class SyncService : INotifyPropertyChanged, IDisposable
 
         var acknowledged = 0;
         var ignoredOlder = 0;
+        var encryptedFieldSupported = false;
         SetState(true, "Виконується синхронізація…");
         try
         {
@@ -97,6 +98,17 @@ public sealed class SyncService : INotifyPropertyChanged, IDisposable
                 foreach (var change in changes)
                 {
                     token.ThrowIfCancellationRequested();
+                    using var payload = JsonDocument.Parse(change.PayloadJson);
+                    if (!encryptedFieldSupported
+                        && payload.RootElement.TryGetProperty("StudentCardNumberEncrypted", out var encryptedCard)
+                        && encryptedCard.ValueKind == JsonValueKind.String
+                        && !string.IsNullOrEmpty(encryptedCard.GetString()))
+                    {
+                        var health = await _httpClient.GetFromJsonAsync<ApiHealth>("health", token);
+                        if (health?.SupportsEncryptedStudentCards != true)
+                            throw new NotSupportedException("The API must support encrypted student cards.");
+                        encryptedFieldSupported = true;
+                    }
                     // sqlite-net restores DateTime ticks without the UTC Kind flag.
                     var timestamp = new DateTimeOffset(DateTime.SpecifyKind(change.CreatedAtUtc, DateTimeKind.Utc));
                     var request = new SyncRequest(change.OperationId, change.StudentId, change.EntityType,
@@ -128,6 +140,10 @@ public sealed class SyncService : INotifyPropertyChanged, IDisposable
         {
             SetState(true, token.IsCancellationRequested ? "Синхронізацію зупинено."
                 : "Час очікування сервера минув. Зміни залишилися в черзі.");
+        }
+        catch (NotSupportedException)
+        {
+            SetState(true, "Перезапустіть локальний API з оновленим кодом. Зміни залишилися в черзі.");
         }
         catch (HttpRequestException ex)
         {
@@ -176,4 +192,5 @@ public sealed class SyncService : INotifyPropertyChanged, IDisposable
     private record SyncRequest(Guid OperationId, Guid StudentId, string EntityType,
         string Operation, string PayloadJson, DateTimeOffset CreatedAtUtc);
     private record SyncReceipt(Guid OperationId, Guid StudentId, string Status, bool Applied, bool Duplicate);
+    private record ApiHealth(bool SupportsEncryptedStudentCards);
 }

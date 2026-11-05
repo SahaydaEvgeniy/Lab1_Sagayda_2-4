@@ -1,6 +1,7 @@
 namespace StudentSyncApi;
 
-public record StudentData(Guid Id, string FullName, string Group, double AverageScore);
+public record StudentData(Guid Id, string FullName, string Group, double AverageScore,
+    string? StudentCardNumberEncrypted = null);
 
 public record SyncOperation(Guid OperationId, Guid StudentId, string EntityType,
     string Operation, string PayloadJson, DateTimeOffset CreatedAtUtc);

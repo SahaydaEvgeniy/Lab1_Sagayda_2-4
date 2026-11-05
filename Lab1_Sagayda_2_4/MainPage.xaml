@@ -77,8 +77,14 @@
                 Placeholder="Введіть групу"
                 Text="{Binding Group, Mode=TwoWay}" />
 
-            <Label Text="Середній бал" />
+            <Label Text="Номер студентського квитка" />
+            <Entry
+                Text="{Binding StudentCardNumber, Mode=TwoWay}"
+                IsReadOnly="{Binding IsBusy}"
+                MaxLength="64"
+                Placeholder="Необов’язкове поле" />
 
+            <Label Text="Середній бал" />
             <Slider
                 Maximum="5"
                 Minimum="0"

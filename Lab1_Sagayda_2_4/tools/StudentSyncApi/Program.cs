@@ -14,7 +14,7 @@ app.MapGet("/", () => Results.Ok(new
     endpoints = new[] { "GET /health", "GET /students", "GET /students/{id}",
         "GET /sync/operations", "POST /sync/operations" }
 }));
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/health", () => Results.Ok(new { status = "ok", supportsEncryptedStudentCards = true }));
 app.MapGet("/students", async (SyncStore store) => Results.Ok(await store.GetStudentsAsync()));
 app.MapGet("/students/{id:guid}", async Task<IResult> (Guid id, SyncStore store) =>
     await store.GetStudentAsync(id) is { } student ? Results.Ok(student) : Results.NotFound());

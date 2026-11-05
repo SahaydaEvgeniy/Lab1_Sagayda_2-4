@@ -13,4 +13,9 @@ public class Student
     public string Group { get; set; } = string.Empty;
 
     public double AverageScore { get; set; }
+
+    [SQLite.Ignore, System.Text.Json.Serialization.JsonIgnore]
+    public string StudentCardNumber { get; set; } = string.Empty;
+
+    public string StudentCardNumberEncrypted { get; set; } = string.Empty;
 }

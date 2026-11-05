@@ -23,9 +23,12 @@ namespace Lab1_Sagayda_2_4
 #endif
 
             builder.Services.AddSingleton<IAppStateService, AppStateService>();
-            builder.Services.AddSingleton<Repositories.IStudentRepository>(_ =>
+            builder.Services.AddSingleton<Microsoft.Maui.Storage.ISecureStorage>(Microsoft.Maui.Storage.SecureStorage.Default);
+            builder.Services.AddSingleton<IStudentCardProtection, StudentCardProtection>();
+            builder.Services.AddSingleton<Repositories.IStudentRepository>(services =>
                 new Repositories.StudentRepository(
-                    Path.Combine(FileSystem.Current.AppDataDirectory, "students.db3")));
+                    Path.Combine(FileSystem.Current.AppDataDirectory, "students.db3"),
+                    services.GetRequiredService<IStudentCardProtection>()));
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddSingleton<DeepLinkService>();
             builder.Services.AddSingleton<Microsoft.Maui.Networking.IConnectivity>(Microsoft.Maui.Networking.Connectivity.Current);

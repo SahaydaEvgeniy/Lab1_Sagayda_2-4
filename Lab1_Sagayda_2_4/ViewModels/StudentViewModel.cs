@@ -115,6 +115,17 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         }
     }
 
+    public string StudentCardNumber
+    {
+        get => _student.StudentCardNumber;
+        set
+        {
+            if (_student.StudentCardNumber == value) return;
+            _student.StudentCardNumber = value;
+            OnPropertyChanged(nameof(StudentCardNumber));
+        }
+    }
+
     public double AverageScore
     {
         get => _student.AverageScore;
@@ -153,7 +164,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         {
             FullName = FullName,
             Group = Group,
-            AverageScore = AverageScore
+            AverageScore = AverageScore,
+            StudentCardNumber = StudentCardNumber
         };
         await _repository.SaveAsync(student);
         Students.Add(student);
@@ -161,6 +173,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         FullName = string.Empty;
         Group = string.Empty;
         AverageScore = 0;
+        StudentCardNumber = string.Empty;
         await RefreshPendingCountAsync();
     }
 

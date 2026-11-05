@@ -1,6 +1,6 @@
 # Схема локальної бази даних
 
-Лабораторна робота 4, кроки 1–5. Файл `students.db3` створюється в
+Лабораторна робота 4, кроки 1–6. Файл `students.db3` створюється в
 `FileSystem.Current.AppDataDirectory`. Версія схеми зберігається у `PRAGMA user_version`.
 
 ## Таблиця Students від версії 1
@@ -93,5 +93,14 @@ DeepLinkService отримує студента асинхронно за Id б�
 `AcknowledgeChangeAsync(OperationId)`, який видаляє лише відповідну операцію.
 Студент при цьому не змінюється. Версія схеми залишається 3, додаткові таблиці
 на цьому кроці не створюються. Опис запуску та тестування: `docs/Synchronization.md`.
+
+## Версія 4 та захищене поле
+
+До `Students` додається `StudentCardNumberEncrypted` з AES-GCM-шифротекстом.
+`StudentCardNumber` не має колонки й не серіалізується в JSON: це властивість
+лише для UI та чернетки. У старих записах нова колонка може бути NULL;
+це обробляється як порожній необов'язковий номер. Id та наявні SyncQueueItem
+не змінюються. Ключ AES зберігається окремо через SecureStorage.
+Подробиці й перевірки: `docs/StudentCardEncryption.md`.
 
 Джерело пакета: https://www.nuget.org/packages/sqlite-net-pcl/1.11.285

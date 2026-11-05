@@ -12,6 +12,7 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
     private Student? _originalStudent;
     private readonly IAppStateService _appStateService;
     private double _averageScore;
+    private string _studentCardNumber = string.Empty;
     private readonly IStudentRepository _repository;
     private bool _isBusy;
 
@@ -72,6 +73,17 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
     public string Group { get; private set; } = string.Empty;
 
+    public string StudentCardNumber
+    {
+        get => _studentCardNumber;
+        set
+        {
+            if (_studentCardNumber == value) return;
+            _studentCardNumber = value;
+            OnPropertyChanged(nameof(StudentCardNumber));
+        }
+    }
+
     public double AverageScore
     {
         get => _averageScore;
@@ -99,6 +111,7 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             FullName = student.FullName;
             Group = student.Group;
             AverageScore = student.AverageScore;
+            StudentCardNumber = student.StudentCardNumber;
 
             OnPropertyChanged(nameof(FullName));
             OnPropertyChanged(nameof(StudentId));
@@ -115,8 +128,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
         if (_originalStudent is null)
             return;
 
-        _appStateService.StudentDraft = new StudentEditDraft(_originalStudent, AverageScore);
-        Debug.WriteLine("[Student Draft] Saved: чернетку бала збережено в стані сесії.");
+        _appStateService.StudentDraft = new StudentEditDraft(_originalStudent, AverageScore, StudentCardNumber);
+        Debug.WriteLine("[Student Draft] Saved: чернетку форми збережено в стані сесії.");
     }
 
     public void RestoreDraft()
@@ -125,7 +138,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
         if (draft is not null && _originalStudent?.Id == draft.OriginalStudent.Id)
         {
             AverageScore = draft.AverageScore;
-            Debug.WriteLine("[Student Draft] Restored: чернетку бала відновлено.");
+            StudentCardNumber = draft.StudentCardNumber;
+            Debug.WriteLine("[Student Draft] Restored: чернетку форми відновлено.");
         }
     }
 
@@ -152,7 +166,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             Id = _originalStudent.Id,
             FullName = FullName,
             Group = Group,
-            AverageScore = AverageScore
+            AverageScore = AverageScore,
+            StudentCardNumber = StudentCardNumber
         };
 
         await _repository.SaveAsync(updatedStudent);

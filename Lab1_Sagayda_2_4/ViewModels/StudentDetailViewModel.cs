@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
 using Lab1_Sagayda_2_4.Services;
+using Lab1_Sagayda_2_4.Repositories;
 using System.Diagnostics;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
@@ -11,6 +12,25 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
     private Student? _originalStudent;
     private readonly IAppStateService _appStateService;
     private double _averageScore;
+    private readonly IStudentRepository _repository;
+    private bool _isBusy;
+
+    public bool IsBusy
+    {
+        get => _isBusy;
+        private set
+        {
+            _isBusy = value;
+            OnPropertyChanged(nameof(IsBusy));
+            ((Command)SaveCommand).ChangeCanExecute();
+            ((Command)GoBackCommand).ChangeCanExecute();
+            ((Command)DecreaseScoreCommand).ChangeCanExecute();
+            ((Command)IncreaseScoreCommand).ChangeCanExecute();
+        }
+    }
+
+    public string ErrorMessage { get; private set; } = string.Empty;
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public ICommand GoBackCommand { get; }
 
@@ -22,22 +42,24 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
     public ICommand CopyLinkCommand { get; }
 
-    public StudentDetailViewModel(IAppStateService appStateService)
+    public StudentDetailViewModel(IAppStateService appStateService, IStudentRepository repository)
     {
         _appStateService = appStateService;
+        _repository = repository;
         CopyLinkCommand = new Command(async () =>
             await Clipboard.Default.SetTextAsync(StudentLink),
             () => _originalStudent is not null);
         DecreaseScoreCommand = new Command(
             () => AverageScore = Math.Max(0, Math.Round(AverageScore - 0.1, 2)),
-            () => AverageScore > 0);
+            () => !IsBusy && AverageScore > 0);
         IncreaseScoreCommand = new Command(
             () => AverageScore = Math.Min(5, Math.Round(AverageScore + 0.1, 2)),
-            () => AverageScore < 5);
+            () => !IsBusy && AverageScore < 5);
         GoBackCommand = new Command(async () =>
-            await Shell.Current.GoToAsync(".."));
+            await RunOperationAsync(() => Shell.Current.GoToAsync(".."),
+                "Не вдалося повернутися до списку."), () => !IsBusy);
         SaveCommand = new Command(async () => await SaveAsync(),
-            () => _originalStudent is not null);
+            () => !IsBusy && _originalStudent is not null);
     }
 
     public string FullName { get; private set; } = string.Empty;
@@ -100,7 +122,7 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
     public void RestoreDraft()
     {
         var draft = _appStateService.StudentDraft;
-        if (draft is not null && ReferenceEquals(draft.OriginalStudent, _originalStudent))
+        if (draft is not null && _originalStudent?.Id == draft.OriginalStudent.Id)
         {
             AverageScore = draft.AverageScore;
             Debug.WriteLine("[Student Draft] Restored: чернетку бала відновлено.");
@@ -109,11 +131,18 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
 
     public void ClearDraft()
     {
-        if (ReferenceEquals(_appStateService.StudentDraft?.OriginalStudent, _originalStudent))
+        if (_originalStudent is not null
+            && _appStateService.StudentDraft?.OriginalStudent.Id == _originalStudent.Id)
             _appStateService.StudentDraft = null;
     }
 
     private async Task SaveAsync()
+    {
+        await RunOperationAsync(SaveStudentAsync,
+            "Не вдалося завершити збереження. Залишайтеся на цій сторінці та спробуйте ще раз.");
+    }
+
+    private async Task SaveStudentAsync()
     {
         if (_originalStudent is null)
             return;
@@ -126,6 +155,8 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
             AverageScore = AverageScore
         };
 
+        await _repository.SaveAsync(updatedStudent);
+
         var parameters = new ShellNavigationQueryParameters
         {
             { "OriginalStudent", _originalStudent },
@@ -133,6 +164,35 @@ public class StudentDetailViewModel : IQueryAttributable, INotifyPropertyChanged
         };
 
         await Shell.Current.GoToAsync("..", parameters);
+    }
+
+    private async Task RunOperationAsync(Func<Task> operation, string errorMessage)
+    {
+        if (IsBusy)
+            return;
+
+        IsBusy = true;
+        SetError(string.Empty);
+        try
+        {
+            await operation();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Student Details] Error: {ex}");
+            SetError(errorMessage);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void SetError(string message)
+    {
+        ErrorMessage = message;
+        OnPropertyChanged(nameof(ErrorMessage));
+        OnPropertyChanged(nameof(HasError));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

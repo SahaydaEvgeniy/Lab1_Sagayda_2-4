@@ -5,14 +5,14 @@ namespace Lab1_Sagayda_2_4.Services;
 
 public class DeepLinkService
 {
-    private readonly IAppStateService _appStateService;
+    private readonly Repositories.IStudentRepository _repository;
     private readonly Queue<Uri> _pendingLinks = new();
     private Shell? _shell;
     private bool _isProcessing;
 
-    public DeepLinkService(IAppStateService appStateService)
+    public DeepLinkService(Repositories.IStudentRepository repository)
     {
-        _appStateService = appStateService;
+        _repository = repository;
     }
 
     public void ReceiveLink(Uri uri)
@@ -49,6 +49,15 @@ public class DeepLinkService
                 {
                     // External requests must not terminate the app via an unobserved task.
                     Debug.WriteLine($"[Deep Link] Error: {ex}");
+                    try
+                    {
+                        await _shell.DisplayAlertAsync("Помилка відкриття",
+                            "Не вдалося прочитати дані студента. Спробуйте ще раз.", "OK");
+                    }
+                    catch (Exception alertError)
+                    {
+                        Debug.WriteLine($"[Deep Link] Alert error: {alertError.Message}");
+                    }
                 }
             }
         }
@@ -68,7 +77,7 @@ public class DeepLinkService
             return;
         }
 
-        var student = _appStateService.FindStudent(id);
+        var student = await _repository.GetByIdAsync(id);
         if (student is null)
         {
             await shell.DisplayAlertAsync("Студента не знайдено",

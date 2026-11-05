@@ -61,17 +61,19 @@
             <Label Text="ПІБ студента" />
 
             <Label
-                Text="{Binding AppState.StorageError}"
-                IsVisible="{Binding AppState.HasStorageError}"
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
                 TextColor="{AppThemeBinding Light=Red, Dark=LightCoral}" />
 
             <Entry
+                IsReadOnly="{Binding IsBusy}"
                 Placeholder="Введіть ПІБ"
                 Text="{Binding FullName, Mode=TwoWay}" />
 
             <Label Text="Група" />
 
             <Entry
+                IsReadOnly="{Binding IsBusy}"
                 Placeholder="Введіть групу"
                 Text="{Binding Group, Mode=TwoWay}" />
 
@@ -80,7 +82,13 @@
             <Slider
                 Maximum="5"
                 Minimum="0"
-                Value="{Binding AverageScore, Mode=TwoWay}" />
+                Value="{Binding AverageScore, Mode=TwoWay}">
+                <Slider.Triggers>
+                    <DataTrigger TargetType="Slider" Binding="{Binding IsBusy}" Value="True">
+                        <Setter Property="IsEnabled" Value="False" />
+                    </DataTrigger>
+                </Slider.Triggers>
+            </Slider>
 
             <Label
                 FontSize="18"
@@ -92,10 +100,22 @@
                 Command="{Binding AddStudentCommand}"
                 Text="Додати студента" />
 
-            <Label
-                FontAttributes="Bold"
-                FontSize="22"
-                Text="Список студентів" />
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <Label
+                    FontAttributes="Bold"
+                    FontSize="22"
+                    VerticalOptions="Center"
+                    Text="Список студентів" />
+                <Button
+                    Grid.Column="1"
+                    Command="{Binding LoadCommand}"
+                    Text="Оновити список" />
+            </Grid>
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                SemanticProperties.Description="Виконується операція з базою даних" />
 
             <Grid HeightRequest="300">
                 <CollectionView
@@ -166,12 +186,13 @@
                     Text="Список студентів поки порожній"
                     TextColor="{AppThemeBinding Light=#6E6E6E, Dark=#C8C8C8}">
                     <Label.Triggers>
-                        <DataTrigger
-                            TargetType="Label"
-                            Binding="{Binding Students.Count}"
-                            Value="0">
+                        <MultiTrigger TargetType="Label">
+                            <MultiTrigger.Conditions>
+                                <BindingCondition Binding="{Binding Students.Count}" Value="0" />
+                                <BindingCondition Binding="{Binding IsBusy}" Value="False" />
+                            </MultiTrigger.Conditions>
                             <Setter Property="IsVisible" Value="True" />
-                        </DataTrigger>
+                        </MultiTrigger>
                     </Label.Triggers>
                 </Label>
             </Grid>

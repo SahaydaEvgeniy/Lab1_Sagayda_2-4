@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Lab1_Sagayda_2_4.Models;
 using SQLite;
 
@@ -6,15 +7,17 @@ namespace Lab1_Sagayda_2_4.Repositories;
 
 public class StudentRepository : IStudentRepository
 {
-    private const int CurrentSchemaVersion = 1;
+    private const int CurrentSchemaVersion = 2;
     private readonly SQLiteAsyncConnection _database;
     private readonly string _databasePath;
+    private readonly string _legacyJsonPath;
     private readonly SemaphoreSlim _initializationLock = new(1, 1);
     private bool _initialized;
 
     public StudentRepository(string databasePath)
     {
         _databasePath = databasePath;
+        _legacyJsonPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(databasePath))!, "students.json");
         _database = new SQLiteAsyncConnection(databasePath,
             SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create | SQLiteOpenFlags.FullMutex);
     }
@@ -36,7 +39,13 @@ public class StudentRepository : IStudentRepository
                 if (version == 0)
                 {
                     connection.CreateTable<Student>();
-                    connection.Execute("PRAGMA user_version = 1");
+                }
+
+                if (version < 2)
+                {
+                    connection.Execute("CREATE TABLE IF NOT EXISTS AppMetadata (Key TEXT PRIMARY KEY NOT NULL, Value TEXT NOT NULL)");
+                    ImportLegacyStudents(connection);
+                    connection.Execute("PRAGMA user_version = 2");
                 }
             });
 
@@ -47,6 +56,38 @@ public class StudentRepository : IStudentRepository
         {
             _initializationLock.Release();
         }
+    }
+
+    private void ImportLegacyStudents(SQLiteConnection connection)
+    {
+        if (connection.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM AppMetadata WHERE Key = ?", "LegacyJsonImported") > 0)
+            return;
+
+        var imported = 0;
+        if (File.Exists(_legacyJsonPath))
+        {
+            var students = JsonSerializer.Deserialize<List<Student>>(File.ReadAllText(_legacyJsonPath))
+                ?? throw new InvalidDataException("JSON-список студентів порожній або пошкоджений.");
+            var ids = new HashSet<Guid>();
+            foreach (var student in students)
+            {
+                if (student is null || student.Id == Guid.Empty || !ids.Add(student.Id)
+                    || !double.IsFinite(student.AverageScore)
+                    || student.AverageScore < 0 || student.AverageScore > 5)
+                    throw new InvalidDataException("JSON-список містить некоректний запис або повторний Id.");
+            }
+
+            foreach (var student in students)
+            {
+                // Existing SQLite records take precedence over the old backup.
+                if (connection.Find<Student>(student.Id) is null)
+                    imported += connection.Insert(student);
+            }
+        }
+
+        connection.Execute("INSERT INTO AppMetadata (Key, Value) VALUES (?, ?)", "LegacyJsonImported", "1");
+        Debug.WriteLine($"[SQLite] JSON migration: imported {imported}; original file retained.");
     }
 
     public async Task<List<Student>> GetAllAsync()

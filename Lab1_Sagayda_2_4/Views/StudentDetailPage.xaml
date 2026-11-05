@@ -18,6 +18,12 @@
                 FontSize="26"
                 Text="Деталі студента" />
 
+            <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+            <Label
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
+                TextColor="{AppThemeBinding Light=Red, Dark=LightCoral}" />
+
             <Label Text="ПІБ студента" />
             <Label Text="{Binding FullName}" />
 

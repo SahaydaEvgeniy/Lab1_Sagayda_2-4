@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Windows.Input;
 using Lab1_Sagayda_2_4.Models;
 using Lab1_Sagayda_2_4.Services;
+using Lab1_Sagayda_2_4.Repositories;
 
 namespace Lab1_Sagayda_2_4.ViewModels;
 
@@ -13,7 +14,27 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     private readonly IAppStateService _appStateService;
 
-    public IAppStateService AppState => _appStateService;
+    private readonly IStudentRepository _repository;
+    private bool _isBusy;
+
+    public bool IsBusy
+    {
+        get => _isBusy;
+        private set
+        {
+            _isBusy = value;
+            OnPropertyChanged(nameof(IsBusy));
+            ((Command)LoadCommand).ChangeCanExecute();
+            ((Command)AddStudentCommand).ChangeCanExecute();
+            ((Command)DeleteStudentCommand).ChangeCanExecute();
+            ((Command)OpenDetailsCommand).ChangeCanExecute();
+            ((Command)OpenSettingsCommand).ChangeCanExecute();
+        }
+    }
+
+    public string ErrorMessage { get; private set; } = string.Empty;
+
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public ObservableCollection<Student> Students { get; private set; }
 
@@ -27,17 +48,24 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public ICommand DeleteStudentCommand { get; }
 
-    public StudentViewModel(IAppStateService appStateService)
+    public StudentViewModel(IAppStateService appStateService, IStudentRepository repository)
     {
         _appStateService = appStateService;
+        _repository = repository;
         Students = appStateService.Students;
-        LoadCommand = new Command(LoadStudents);
+        LoadCommand = new Command(async () => await RunOperationAsync(LoadStudentsAsync,
+            "Не вдалося завантажити студентів. Натисніть «Оновити список», щоб повторити."), () => !IsBusy);
         OpenSettingsCommand = new Command(async () =>
-            await Shell.Current.GoToAsync("settings"));
-        AddStudentCommand = new Command(AddStudent, CanAddStudent);
-        DeleteStudentCommand = new Command<Student>(DeleteStudent);
+            await RunOperationAsync(() => Shell.Current.GoToAsync("settings"),
+                "Не вдалося відкрити налаштування."), () => !IsBusy);
+        AddStudentCommand = new Command(async () => await RunOperationAsync(AddStudentAsync,
+            "Не вдалося додати студента. Дані форми залишено для повторної спроби."), CanAddStudent);
+        DeleteStudentCommand = new Command<Student>(async student =>
+            await RunOperationAsync(() => DeleteStudentAsync(student),
+                "Не вдалося видалити студента. Спробуйте ще раз."), student => student is not null && !IsBusy);
         OpenDetailsCommand = new Command<Student>(async student =>
-            await OpenDetailsAsync(student));
+            await RunOperationAsync(() => OpenDetailsAsync(student),
+                "Не вдалося відкрити деталі студента."), student => student is not null && !IsBusy);
     }
 
     public string FullName
@@ -93,32 +121,41 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
     public bool IsHighScore =>
         AverageScore >= 4.0;
 
-    private void LoadStudents()
+    private async Task LoadStudentsAsync()
     {
-        // Reuse the session collection so repeated appearances do not duplicate students.
-        Students = _appStateService.Students;
-        OnPropertyChanged(nameof(Students));
-        Debug.WriteLine($"[Student List] LoadCommand: список завантажено зі стану сесії. Студентів: {Students.Count}.");
+        var students = await _repository.GetAllAsync();
+        // Replace the UI snapshot only after a successful read. It is not a storage trigger.
+        Students.Clear();
+        foreach (var student in students)
+            Students.Add(student);
+        Debug.WriteLine($"[Student List] Loaded from SQLite: {Students.Count}.");
     }
 
-    private void AddStudent()
+    private async Task AddStudentAsync()
     {
-        Students.Add(new Student
+        var student = new Student
         {
             FullName = FullName,
             Group = Group,
             AverageScore = AverageScore
-        });
+        };
+        await _repository.SaveAsync(student);
+        Students.Add(student);
 
         FullName = string.Empty;
         Group = string.Empty;
         AverageScore = 0;
     }
 
-    private void DeleteStudent(Student? student)
+    private async Task DeleteStudentAsync(Student? student)
     {
         if (student is not null)
-            Students.Remove(student);
+        {
+            await _repository.DeleteAsync(student);
+            var current = _appStateService.FindStudent(student.Id);
+            if (current is not null)
+                Students.Remove(current);
+        }
     }
 
     private async Task OpenDetailsAsync(Student? student)
@@ -126,7 +163,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         if (student is null)
             return;
 
-        var parameters = new Dictionary<string, object>
+        var parameters = new ShellNavigationQueryParameters
         {
             { "SelectedStudent", student }
         };
@@ -150,7 +187,36 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     private bool CanAddStudent()
     {
-        return !string.IsNullOrWhiteSpace(FullName);
+        return !IsBusy && !string.IsNullOrWhiteSpace(FullName);
+    }
+
+    private async Task RunOperationAsync(Func<Task> operation, string errorMessage)
+    {
+        if (IsBusy)
+            return;
+
+        IsBusy = true;
+        SetError(string.Empty);
+        try
+        {
+            await operation();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Student List] Error: {ex}");
+            SetError(errorMessage);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void SetError(string message)
+    {
+        ErrorMessage = message;
+        OnPropertyChanged(nameof(ErrorMessage));
+        OnPropertyChanged(nameof(HasError));
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -29,6 +29,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
             ((Command)DeleteStudentCommand).ChangeCanExecute();
             ((Command)OpenDetailsCommand).ChangeCanExecute();
             ((Command)OpenSettingsCommand).ChangeCanExecute();
+            ((Command)SyncCommand).ChangeCanExecute();
         }
     }
 
@@ -36,11 +37,8 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
-    public int? PendingChangeCount { get; private set; }
-
-    public string PendingSyncSummary => PendingChangeCount is int count
-        ? $"Очікують синхронізації: {count}"
-        : "Черга синхронізації: кількість невідома";
+    public SyncService Sync { get; }
+    public ICommand SyncCommand { get; }
 
     public ObservableCollection<Student> Students { get; private set; }
 
@@ -54,10 +52,11 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
 
     public ICommand DeleteStudentCommand { get; }
 
-    public StudentViewModel(IAppStateService appStateService, IStudentRepository repository)
+    public StudentViewModel(IAppStateService appStateService, IStudentRepository repository, SyncService syncService)
     {
         _appStateService = appStateService;
         _repository = repository;
+        Sync = syncService;
         Students = appStateService.Students;
         LoadCommand = new Command(async () => await RunOperationAsync(LoadStudentsAsync,
             "Не вдалося завантажити студентів. Натисніть «Оновити список», щоб повторити."), () => !IsBusy);
@@ -72,6 +71,16 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         OpenDetailsCommand = new Command<Student>(async student =>
             await RunOperationAsync(() => OpenDetailsAsync(student),
                 "Не вдалося відкрити деталі студента."), student => student is not null && !IsBusy);
+        SyncCommand = new Command(async () => await Sync.SynchronizeAsync(), () => !IsBusy && !Sync.IsSynchronizing);
+    }
+
+    public void ObserveSync() => Sync.PropertyChanged += OnSyncChanged;
+    public void StopObservingSync() => Sync.PropertyChanged -= OnSyncChanged;
+
+    private void OnSyncChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        if (args.PropertyName == nameof(SyncService.IsSynchronizing))
+            ((Command)SyncCommand).ChangeCanExecute();
     }
 
     public string FullName
@@ -194,21 +203,7 @@ public class StudentViewModel : INotifyPropertyChanged, IQueryAttributable
         }
     }
 
-    private async Task RefreshPendingCountAsync()
-    {
-        try
-        {
-            PendingChangeCount = await _repository.GetPendingChangeCountAsync();
-        }
-        catch (Exception ex)
-        {
-            // A counter failure must not present an already committed CRUD operation as failed.
-            PendingChangeCount = null;
-            Debug.WriteLine($"[Sync Queue] Count error: {ex}");
-        }
-        OnPropertyChanged(nameof(PendingChangeCount));
-        OnPropertyChanged(nameof(PendingSyncSummary));
-    }
+    private Task RefreshPendingCountAsync() => Sync.RefreshPendingCountAsync();
 
     private bool CanAddStudent()
     {

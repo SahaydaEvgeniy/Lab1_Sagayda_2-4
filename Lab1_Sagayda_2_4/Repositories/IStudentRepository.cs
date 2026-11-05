@@ -11,4 +11,5 @@ public interface IStudentRepository
     Task<int> DeleteAsync(Student student);
     Task<int> GetPendingChangeCountAsync();
     Task<List<SyncQueueItem>> GetPendingChangesAsync();
+    Task<bool> AcknowledgeChangeAsync(Guid operationId);
 }

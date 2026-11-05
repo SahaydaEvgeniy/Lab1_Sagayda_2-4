@@ -28,6 +28,14 @@ namespace Lab1_Sagayda_2_4
                     Path.Combine(FileSystem.Current.AppDataDirectory, "students.db3")));
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddSingleton<DeepLinkService>();
+            builder.Services.AddSingleton<Microsoft.Maui.Networking.IConnectivity>(Microsoft.Maui.Networking.Connectivity.Current);
+            builder.Services.AddSingleton(new HttpClient
+            {
+                BaseAddress = new Uri(DeviceInfo.Platform == DevicePlatform.Android
+                    ? "http://10.0.2.2:5080/" : "http://127.0.0.1:5080/"),
+                Timeout = TimeSpan.FromSeconds(10)
+            });
+            builder.Services.AddSingleton<SyncService>();
             builder.Services.AddTransient<SettingsViewModel>();
             builder.Services.AddTransient<SettingsPage>();
             builder.Services.AddTransient<StudentViewModel>();

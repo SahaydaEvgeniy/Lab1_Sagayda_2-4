@@ -7,16 +7,19 @@ namespace Lab1_Sagayda_2_4
         private readonly AppShell _appShell;
         private readonly Services.DeepLinkService _deepLinkService;
         private readonly Repositories.IStudentRepository _studentRepository;
+        private readonly Services.SyncService _syncService;
+        private bool _isClosing;
 
         public App(AppShell appShell, Services.ThemeService themeService,
             Services.DeepLinkService deepLinkService,
-            Repositories.IStudentRepository studentRepository)
+            Repositories.IStudentRepository studentRepository, Services.SyncService syncService)
         {
             InitializeComponent();
             UserAppTheme = themeService.SelectedTheme;
             _appShell = appShell;
             _deepLinkService = deepLinkService;
             _studentRepository = studentRepository;
+            _syncService = syncService;
         }
 
         protected override void OnAppLinkRequestReceived(Uri uri)
@@ -44,10 +47,15 @@ namespace Lab1_Sagayda_2_4
                     viewModel.RestoreDraft();
 
                 Debug.WriteLine("[App Lifecycle] Resumed: застосунок повернувся з фону.");
+                _ = _syncService.SynchronizeAsync();
             };
 
             window.Destroying += (_, _) =>
+            {
+                _isClosing = true;
+                _syncService.Stop();
                 Debug.WriteLine("[App Lifecycle] Destroying: вікно застосунку закривається.");
+            };
 
             return window;
         }
@@ -57,6 +65,8 @@ namespace Lab1_Sagayda_2_4
             try
             {
                 await _studentRepository.InitializeAsync();
+                if (!_isClosing)
+                    _syncService.Start();
             }
             catch (Exception ex)
             {

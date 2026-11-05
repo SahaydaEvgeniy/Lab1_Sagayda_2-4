@@ -161,6 +161,12 @@ public class StudentRepository : IStudentRepository
         return await _database.Table<SyncQueueItem>().OrderBy(item => item.Sequence).ToListAsync();
     }
 
+    public async Task<bool> AcknowledgeChangeAsync(Guid operationId)
+    {
+        await InitializeAsync();
+        return await _database.ExecuteAsync("DELETE FROM SyncQueue WHERE OperationId = ?", operationId) == 1;
+    }
+
     private static void EnqueueChange(SQLiteConnection connection, Student student, string operation)
     {
         connection.Insert(new SyncQueueItem

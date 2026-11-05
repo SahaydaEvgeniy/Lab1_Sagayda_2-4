@@ -6,14 +6,17 @@ namespace Lab1_Sagayda_2_4
     {
         private readonly AppShell _appShell;
         private readonly Services.DeepLinkService _deepLinkService;
+        private readonly Repositories.IStudentRepository _studentRepository;
 
         public App(AppShell appShell, Services.ThemeService themeService,
-            Services.DeepLinkService deepLinkService)
+            Services.DeepLinkService deepLinkService,
+            Repositories.IStudentRepository studentRepository)
         {
             InitializeComponent();
             UserAppTheme = themeService.SelectedTheme;
             _appShell = appShell;
             _deepLinkService = deepLinkService;
+            _studentRepository = studentRepository;
         }
 
         protected override void OnAppLinkRequestReceived(Uri uri)
@@ -25,6 +28,7 @@ namespace Lab1_Sagayda_2_4
         protected override Window CreateWindow(IActivationState? activationState)
         {
             var window = new Window(_appShell);
+            window.Created += (_, _) => _ = InitializeDatabaseAsync();
 
             window.Stopped += (_, _) =>
             {
@@ -46,6 +50,18 @@ namespace Lab1_Sagayda_2_4
                 Debug.WriteLine("[App Lifecycle] Destroying: вікно застосунку закривається.");
 
             return window;
+        }
+
+        private async Task InitializeDatabaseAsync()
+        {
+            try
+            {
+                await _studentRepository.InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SQLite] Initialization failed: {ex}");
+            }
         }
     }
 }

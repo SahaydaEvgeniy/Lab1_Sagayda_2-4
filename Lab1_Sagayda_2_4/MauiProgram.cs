@@ -23,6 +23,9 @@ namespace Lab1_Sagayda_2_4
 #endif
 
             builder.Services.AddSingleton<IAppStateService, AppStateService>();
+            builder.Services.AddSingleton<Repositories.IStudentRepository>(_ =>
+                new Repositories.StudentRepository(
+                    Path.Combine(FileSystem.Current.AppDataDirectory, "students.db3")));
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddSingleton<DeepLinkService>();
             builder.Services.AddTransient<SettingsViewModel>();
